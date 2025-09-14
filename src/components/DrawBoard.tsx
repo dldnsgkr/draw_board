@@ -531,6 +531,13 @@ const DrawBoard = ({
 
   // 전체 도형 및 히스토리 초기화
   const clearCanvas = () => {
+    if (shapes.length > 0) {
+      const confirmClear = window.confirm(
+        "작성된 내용이 있습니다. 초기화하시겠습니까?"
+      );
+      if (!confirmClear) return;
+    }
+
     setShapes([]);
     snapshotHistory([]);
     setSelectedShapeId(null);
@@ -544,7 +551,6 @@ const DrawBoard = ({
     const saved = localStorage.getItem("drawState");
     if (saved) {
       const parsed = JSON.parse(saved);
-      console.log(parsed);
 
       // history 복원 시 Path2D 재생성
       historyRef.current = (parsed.history || [])
@@ -585,6 +591,9 @@ const DrawBoard = ({
 
   // localStorage 저장
   useEffect(() => {
+    // 만료일 밀리초
+    const expireTime = Date.now() + 7 * 24 * 60 * 60 * 1000;
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const plainShapes = shapes?.map(({ path, ...rest }) => rest);
     localStorage.setItem(
@@ -593,6 +602,7 @@ const DrawBoard = ({
         shapes: plainShapes,
         history: historyRef.current,
         index: historyIndexRef.current,
+        expires: expireTime,
       })
     );
   }, [shapes]);
