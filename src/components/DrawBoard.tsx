@@ -250,7 +250,7 @@ const DrawBoard = ({
   };
 
   // undo 실행 (히스토리 이전 단계로)
-  const undo = () => {
+  const undo = useCallback(() => {
     if (historyIndexRef.current > -1) historyIndexRef.current--; // 먼저 감소
     if (historyIndexRef.current < 0) {
       setShapes([]);
@@ -264,10 +264,10 @@ const DrawBoard = ({
       setShapes(restoredShapes);
     }
     setSelectedShapeId(null);
-  };
+  }, []);
 
   // redo 실행 (히스토리 다음 단계로)
-  const redo = () => {
+  const redo = useCallback(() => {
     // history가 없으면 바로 return
     if (historyIndexRef.current >= historyRef.current.length - 1) return;
 
@@ -282,7 +282,7 @@ const DrawBoard = ({
     );
     setShapes(restoredShapes);
     setSelectedShapeId(null);
-  };
+  }, []);
 
   // 마우스 클릭 시작 시 처리 (선택/드래그/새 도형 시작)
   const startPaint = useCallback(
@@ -644,6 +644,31 @@ const DrawBoard = ({
     };
   }, [showShapesDropdown]);
 
+  // ctrl + z, ctrl + shift + z를 인식해 이전과 원복을 가능하게 함
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isUndo =
+        (e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "z";
+      const isRedo =
+        (e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "z";
+
+      if (isUndo) {
+        e.preventDefault();
+        undo();
+      }
+
+      if (isRedo) {
+        e.preventDefault();
+        redo();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [undo, redo]);
+
   // 초기 history 스냅샷 저장
   useEffect(() => snapshotHistory([]), []);
 
@@ -737,8 +762,20 @@ const DrawBoard = ({
           </ToolButton>
 
           <ToolButton onClick={clearCanvas}>초기화</ToolButton>
-          <ToolButton onClick={undo}>되돌리기</ToolButton>
-          <ToolButton onClick={redo}>다시하기</ToolButton>
+          <ToolButton
+            onClick={undo}
+            disabled={historyIndexRef.current < 0}
+            $active={false}
+          >
+            되돌리기
+          </ToolButton>
+          <ToolButton
+            onClick={redo}
+            disabled={historyIndexRef.current >= historyRef.current.length - 1}
+            $active={false}
+          >
+            다시하기
+          </ToolButton>
 
           {(selectedShapeId || mode === "free") && (
             <PaletteWrapper>

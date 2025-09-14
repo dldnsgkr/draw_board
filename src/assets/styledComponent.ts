@@ -46,6 +46,11 @@ const ToolButton = styled.button<{ $active?: boolean }>`
   &:hover {
     background: ${({ $active }) => ($active ? "#d6ecfa" : "#f0f0f0")};
   }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 `;
 
 // ====== Dropdown ======
