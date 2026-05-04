@@ -19,11 +19,26 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Resolve base path
+        id: base
+        run: |
+          REPO="${{ github.event.repository.name }}"
+          OWNER="${{ github.repository_owner }}"
+          if [ "$REPO" = "${OWNER}.github.io" ]; then
+            echo "path=/" >> $GITHUB_OUTPUT
+          else
+            echo "path=/${REPO}/" >> $GITHUB_OUTPUT
+          fi
+
       - name: Install dependencies
         run: npm install
 
       - name: Build
-        run: npm run build
+        run: npx vite build --base=${{ steps.base.outputs.path }}
+        env:
+          PUBLIC_URL: ${{ steps.base.outputs.path }}
+          VITE_BASE_URL: ${{ steps.base.outputs.path }}
+          BASE_PATH: ${{ steps.base.outputs.path }}
 
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4
